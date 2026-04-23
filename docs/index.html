@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🍺 El Farol Bar · 爱尔法鲁酒吧</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── CSS variables (dark default) ── */
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #21262d;
+      --border:    #21262d;
+      --border2:   #30363d;
+      --text:      #e6edf3;
+      --text-mid:  #c9d1d9;
+      --text-dim:  #8b949e;
+      --text-mute: #6e7681;
+      --accent:    #f0a500;
+      --accent-h:  rgba(240,165,0,.18);
+      --btn-play-bg: #238636; --btn-play-bd: #2ea043;
+      --intro-card: #0f1923;
+      --tip-bg:    #1c2128;
+      --tip-bd:    #30363d;
+      --tip-shadow: rgba(0,0,0,.5);
+      --toggle-icon: '☀️'; /* shown in light mode to switch to light */
+    }
+    body.light {
+      --bg:        #f0f4f8;
+      --surface:   #ffffff;
+      --surface2:  #f0f4f8;
+      --border:    #d0d7de;
+      --border2:   #c0c8d4;
+      --text:      #24292f;
+      --text-mid:  #374151;
+      --text-dim:  #6b7280;
+      --text-mute: #9ca3af;
+      --accent:    #c07800;
+      --accent-h:  rgba(192,120,0,.12);
+      --btn-play-bg: #1a7f37; --btn-play-bd: #28a046;
+      --intro-card: #e8f0f8;
+      --tip-bg:    #ffffff;
+      --tip-bd:    #d0d7de;
+      --tip-shadow: rgba(0,0,0,.18);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 20px 16px 56px;
+      transition: background .25s, color .25s;
+    }
+
+    /* ── header ── */
+    header {
+      width: 960px; max-width: 100%;
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .header-text h1 {
+      font-size: 24px; font-weight: 700; color: var(--accent);
+      text-shadow: 0 0 22px rgba(240,165,0,.28); letter-spacing: .4px;
+    }
+    .header-text p { margin-top: 4px; font-size: 12px; color: var(--text-mute); }
+    #btn-theme {
+      padding: 6px 14px; border-radius: 8px; font-size: 13px; cursor: pointer;
+      background: var(--surface); border: 1px solid var(--border2);
+      color: var(--text-dim); transition: background .15s, color .15s;
+      white-space: nowrap; flex-shrink: 0; margin-top: 2px;
+    }
+    #btn-theme:hover { background: var(--surface2); color: var(--text); }
+
+    .wrap { width: 960px; max-width: 100%; }
+
+    /* ── intro panel ── */
+    .intro {
+      margin-bottom: 12px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      overflow: hidden; transition: background .25s, border-color .25s;
+    }
+    .intro-hdr {
+      padding: 11px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; user-select: none;
+      font-size: 13px; font-weight: 600; color: var(--text-mid);
+    }
+    .intro-hdr:hover { background: var(--accent-h); }
+    .intro-hdr .arrow { font-size: 11px; color: var(--text-dim); transition: transform .2s; }
+    .intro-hdr.open .arrow { transform: rotate(180deg); }
+    .intro-body {
+      display: none; padding: 0 14px 14px;
+      grid-template-columns: repeat(3,1fr); gap: 10px;
+    }
+    .intro-body.open { display: grid; }
+    .icard {
+      background: var(--intro-card); border: 1px solid var(--border);
+      border-radius: 8px; padding: 13px 14px;
+      transition: background .25s, border-color .25s;
+    }
+    .icard h3 { font-size: 13px; font-weight: 700; margin-bottom: 7px; color: var(--text-mid); }
+    .icard p  { font-size: 12px; line-height: 1.65; color: var(--text-dim); }
+    .icard strong { color: var(--accent); font-weight: 600; }
+
+    /* ── canvas ── */
+    canvas {
+      display: block; border-radius: 12px;
+      border: 1px solid var(--border); cursor: default;
+      transition: border-color .25s;
+    }
+
+    /* ── control panel ── */
+    .ctrl-panel {
+      margin-top: 10px; padding: 10px 14px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      transition: background .25s, border-color .25s;
+    }
+    .cg { display: flex; align-items: center; gap: 6px; }
+    .cg label {
+      font-size: 11px; color: var(--text-dim); white-space: nowrap;
+      cursor: help; border-bottom: 1px dashed var(--border2);
+      padding-bottom: 1px; transition: color .15s;
+    }
+    .cg label:hover { color: var(--accent); }
+    .cg input[type=range] { width: 80px; accent-color: var(--accent); cursor: pointer; }
+    .cg select {
+      background: var(--surface2); border: 1px solid var(--border2);
+      color: var(--text); border-radius: 5px; padding: 3px 6px;
+      font-size: 12px; cursor: pointer;
+    }
+    .vv { font-size: 13px; font-weight: 600; min-width: 30px; color: var(--text); }
+    .alpha-badge {
+      font-size: 11px; padding: 3px 10px; border-radius: 12px;
+      background: var(--surface2); border: 1px solid var(--border2);
+      color: var(--text-dim); white-space: nowrap; cursor: help;
+      transition: background .15s; border-bottom: 1px dashed var(--border2);
+    }
+    .alpha-badge:hover { background: var(--accent-h); color: var(--accent); }
+    .sep { width: 1px; height: 26px; background: var(--border); }
+    .spacer { flex: 1; }
+    button {
+      padding: 5px 14px; border-radius: 6px; border: 1px solid transparent;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: background .12s, transform .08s;
+    }
+    button:active { transform: scale(.96); }
+    #btn-play  { background: var(--btn-play-bg); color: #fff; border-color: var(--btn-play-bd); }
+    #btn-play:hover  { filter: brightness(1.12); }
+    #btn-play.on { background: #9d3a3a; border-color: #c0483e; }
+    #btn-step  { background: #1f6feb; color: #fff; border-color: #388bfd; }
+    #btn-step:hover  { filter: brightness(1.12); }
+    #btn-reset { background: var(--surface2); color: var(--text); border-color: var(--border2); }
+    #btn-reset:hover { background: var(--surface); }
+
+    /* ── stats bar ── */
+    .stats {
+      margin-top: 10px; display: flex; gap: 0;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+      transition: background .25s, border-color .25s;
+    }
+    .st {
+      flex: 1; padding: 9px 14px; border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .st:last-child { border-right: none; }
+    .sl {
+      font-size: 10px; color: var(--text-mute); text-transform: uppercase;
+      letter-spacing: .4px; cursor: help;
+      border-bottom: 1px dashed transparent; width: fit-content;
+    }
+    .sl[data-tip]:hover { color: var(--accent); border-bottom-color: var(--accent); }
+    .sv { font-size: 18px; font-weight: 700; color: var(--text); }
+
+    /* ── legend ── */
+    .legend {
+      margin-top: 10px; padding: 9px 14px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      display: flex; gap: 14px; flex-wrap: wrap;
+      transition: background .25s, border-color .25s;
+    }
+    .li {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px; color: var(--text-dim);
+      cursor: help; padding: 2px 4px; border-radius: 4px;
+      transition: background .12s;
+    }
+    .li:hover { background: var(--accent-h); }
+    .ld { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .ln { color: var(--text-mid); font-weight: 600; font-size: 12px; }
+    .lc {
+      font-size: 10px; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1px 6px; color: var(--text); min-width: 22px;
+      text-align: center;
+    }
+
+    /* ── tooltip ── */
+    #tt {
+      display: none; position: fixed; z-index: 9999; pointer-events: none;
+      max-width: 240px; padding: 10px 13px;
+      background: var(--tip-bg); border: 1px solid var(--tip-bd);
+      border-radius: 9px; box-shadow: 0 4px 20px var(--tip-shadow);
+      transition: background .2s, border-color .2s;
+    }
+    #tt-title { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 5px; }
+    #tt-body  { font-size: 12px; line-height: 1.6; color: var(--text-dim); }
+    #tt-body strong { color: var(--text-mid); font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<!-- ── TOOLTIP ── -->
+<div id="tt"><div id="tt-title"></div><div id="tt-body"></div></div>
+
+<header>
+  <div class="header-text">
+    <h1>🍺 爱尔法鲁酒吧 · El Farol Bar</h1>
+    <p>每位居民独立决策，互不商量</p>
+  </div>
+  <button id="btn-theme">☀️ 浅色模式</button>
+</header>
+
+<div class="wrap">
+
+  <!-- ── INTRO PANEL ── -->
+  <div class="intro">
+    <div class="intro-hdr" id="intro-hdr">
+      <span>💡 这是什么？</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="intro-body" id="intro-body">
+      <div class="icard">
+        <h3>🍺 爱尔法鲁酒吧问题</h3>
+        <p>1994年，经济学家 <strong>W. Brian Arthur</strong> 提出了这个思想实验：<br><br>
+        圣菲镇有一家酒吧，每周四有现场音乐演出。对100位居民来说，去了就很开心——除非太拥挤。于是大家都想：「如果今晚人少于60人我就去，否则不去。」<br><br>
+        但每个人<strong>只能靠历史经验猜测</strong>今晚会有多少人，没有人互相商量。</p>
+      </div>
+      <div class="icard">
+        <h3>✨ 涌现：混沌中的秩序</h3>
+        <p>这里有一个悖论：如果所有人都预测「今晚人很少」→ 大家都去 → 实际很挤 → 预测错了。不存在一个「大家都同意」的预测。<br><br>
+        但神奇的是：尽管每人各行其是，出勤人数会<strong>自发地稳定在阈值附近</strong>——宏观秩序从微观混沌中涌现，没有任何人设计或协调。</p>
+      </div>
+      <div class="icard">
+        <h3>🎮 怎么探索？</h3>
+        <p>• 按 <strong>单步</strong> 逐周推进，观察决策过程<br>
+        • 悬停在<strong>小人</strong>上，看他当前策略和预测<br>
+        • 拖动<strong>容量阈值</strong>，系统会重新寻找均衡<br>
+        • 调大<strong>记忆长度 m</strong>，策略池变丰富，收敛更好<br>
+        • 悬停在任何<strong>带虚线下划线</strong>的标签上，可看通俗解释</p>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="sim" width="960" height="560"></canvas>
+
+  <div class="ctrl-panel">
+    <div class="cg">
+      <label data-tip="居民数 N" data-tip-body="模拟中居民的总人数。N 越大系统越接近真实大城市的情形，但小 N 也有自己有趣的动态，比如更容易看到个体策略的影响。">居民数 N</label>
+      <select id="sel-n">
+        <option value="25">25 人</option>
+        <option value="36">36 人</option>
+        <option value="49">49 人</option>
+        <option value="64" selected>64 人</option>
+        <option value="81">81 人</option>
+        <option value="100">100 人</option>
+      </select>
+    </div>
+    <div class="sep"></div>
+    <div class="cg">
+      <label data-tip="容量阈值" data-tip-body="酒吧的<strong>舒适容量</strong>占总人口的比例。超过这个人数就太挤了，去了反而不如待在家。<br><br>试试把它拖到很低（20%）或很高（80%），观察系统如何追踪新目标——这就是涌现的适应性！">容量阈值</label>
+      <input type="range" id="sl-thr" min="10" max="90" value="60">
+      <span class="vv" id="vv-thr">60%</span>
+    </div>
+    <div class="sep"></div>
+    <div class="cg">
+      <label data-tip="记忆长度 m" data-tip-body="每个策略能「看到」多少周的历史数据。m 越大，策略池越丰富（约 3m+10 种策略），居民之间差异化越好，出勤趋势收敛越平稳。<br><br>m 太小时策略太少，大家用相似方法预测，容易产生「羊群效应」，出勤剧烈震荡。">记忆长度 m</label>
+      <input type="range" id="sl-m" min="2" max="10" value="6">
+      <span class="vv" id="vv-m">6</span>
+    </div>
+    <div class="cg">
+      <label data-tip="每人策略数 K" data-tip-body="每位居民同时持有 K 个候选策略，并不断追踪哪个策略最准确，每周用当前最佳的那个做决定。<br><br>K 越大，居民适应能力越强，但在小策略池里反而可能让大家更快趋同。K=3~5 通常效果最好。">每人策略数 K</label>
+      <input type="range" id="sl-k" min="2" max="10" value="4">
+      <span class="vv" id="vv-k">4</span>
+    </div>
+    <span class="alpha-badge" id="alpha-badge"
+      data-tip="复杂度比 α"
+      data-tip-body="α = 2ᵐ / N，来自少数派博弈理论。<br><br>• <strong>α 小（拥挤相）</strong>：策略种类相对于人数太少，大家「踩」相同策略，羊群效应强，出勤波动大<br>• <strong>α ≈ 0.34（协调区）</strong>：理论最优点，集体协调能力最强<br>• <strong>α 大（稀疏相）</strong>：策略够多，但接近随机行为<br><br>调整 m 或 N 时观察这个数的变化。">α = 2ᵐ/N = —</span>
+    <div class="sep"></div>
+    <div class="cg">
+      <label>速度</label>
+      <input type="range" id="sl-spd" min="1" max="10" value="3">
+      <span class="vv" id="vv-spd">3×</span>
+    </div>
+    <div class="spacer"></div>
+    <button id="btn-step">单步 ▶</button>
+    <button id="btn-play">▶ 播放</button>
+    <button id="btn-reset">↺ 重置</button>
+  </div>
+
+  <div class="stats">
+    <div class="st"><span class="sl">周次</span><span class="sv" id="sv-wk">0</span></div>
+    <div class="st"><span class="sl">本周出勤</span><span class="sv" id="sv-att">—</span></div>
+    <div class="st"><span class="sl">容量阈值</span><span class="sv" id="sv-thr">—</span></div>
+    <div class="st">
+      <span class="sl" data-tip="近20周均值"
+        data-tip-body="最近20周出勤人数的平均值。若均值接近容量阈值，说明涌现均衡正在形成——系统找到了「大家各退一步」的平衡点。">近20周均值</span>
+      <span class="sv" id="sv-avg">—</span>
+    </div>
+    <div class="st">
+      <span class="sl" data-tip="策略池大小"
+        data-tip-body="当前可用的策略总数（由记忆长度 m 决定）。策略越多，居民之间的多样性越高，涌现秩序越稳定。<br><br>类比金融市场：如果所有交易员都用同一个指标，市场就会崩溃。多样性是系统稳定的来源。">策略池大小</span>
+      <span class="sv" id="sv-pool">—</span>
+    </div>
+    <div class="st">
+      <span class="sl" data-tip="σ²/N 方差"
+        data-tip-body="出勤人数的<strong>归一化方差</strong>（近50周）。越小说明系统越协调，出勤稳定地维持在阈值附近。<br><br>随机决策的基准值约为 0.25。若 σ²/N 远低于 0.25，说明居民们通过纯粹的自组织实现了比随机更好的协调！">状态</span>
+      <span class="sv" id="sv-status">等待开始</span>
+    </div>
+  </div>
+
+  <div class="legend" id="legend"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// THEME
+// ══════════════════════════════════════════════════════════
+let isDark = localStorage.getItem('elftheme') !== 'light';
+
+function applyTheme() {
+  document.body.classList.toggle('light', !isDark);
+  document.getElementById('btn-theme').textContent = isDark ? '☀️ 浅色模式' : '🌙 深色模式';
+  localStorage.setItem('elftheme', isDark ? 'dark' : 'light');
+}
+document.getElementById('btn-theme').addEventListener('click', () => {
+  isDark = !isDark; applyTheme();
+});
+applyTheme();
+
+// Canvas color helper: pick dark or light value
+function clr(d, l) { return isDark ? d : l; }
+
+// ══════════════════════════════════════════════════════════
+// TOOLTIP
+// ══════════════════════════════════════════════════════════
+const ttEl    = document.getElementById('tt');
+const ttTitle = document.getElementById('tt-title');
+const ttBody  = document.getElementById('tt-body');
+let ttTarget  = null;
+
+function showTip(e, title, body) {
+  ttTitle.textContent  = title;
+  ttBody.innerHTML     = body;
+  ttEl.style.display   = 'block';
+  moveTip(e);
+}
+function moveTip(e) {
+  const pad = 14, W = ttEl.offsetWidth, H = ttEl.offsetHeight;
+  let x = e.clientX + pad, y = e.clientY + pad;
+  if (x + W > window.innerWidth  - pad) x = e.clientX - W - pad;
+  if (y + H > window.innerHeight - pad) y = e.clientY - H - pad;
+  ttEl.style.left = x + 'px';
+  ttEl.style.top  = y + 'px';
+}
+function hideTip() { ttEl.style.display = 'none'; ttTarget = null; }
+
+document.addEventListener('mouseover', e => {
+  const el = e.target.closest('[data-tip]');
+  if (!el) return;
+  if (ttTarget === el) return;
+  ttTarget = el;
+  showTip(e, el.dataset.tip, el.dataset.tipBody || '');
+});
+document.addEventListener('mousemove', e => {
+  if (ttTarget) moveTip(e);
+});
+document.addEventListener('mouseout', e => {
+  if (ttTarget && !ttTarget.contains(e.relatedTarget)) hideTip();
+});
+
+// ══════════════════════════════════════════════════════════
+// INTRO TOGGLE
+// ══════════════════════════════════════════════════════════
+document.getElementById('intro-hdr').addEventListener('click', () => {
+  const hdr  = document.getElementById('intro-hdr');
+  const body = document.getElementById('intro-body');
+  const open = body.classList.toggle('open');
+  hdr.classList.toggle('open', open);
+  hdr.querySelector('span:first-child').textContent =
+    open ? '💡 背景介绍（点击收起）' : '💡 这是什么？点击展开背景介绍';
+});
+
+// ══════════════════════════════════════════════════════════
+// STRATEGY CATEGORIES
+// ══════════════════════════════════════════════════════════
+const CAT = {
+  fixed:  { label:'固定预测', color:'#e17055',
+    tip:'无论历史如何，总是预测一个固定人数（比如「永远预测30人」）。最简单，但完全不会学习，在策略竞争中通常最终落败。' },
+  lag:    { label:'滞后记忆', color:'#4e9af1',
+    tip:'直接复制 k 周前的出勤人数作为预测。能捕捉周期性规律——如果每隔两周就会爆满，这类策略能识别出来。' },
+  avg:    { label:'均值/中位', color:'#55d68a',
+    tip:'用过去若干周出勤数的平均值或中位数预测。比单周数据更稳定，对偶然的极端值不敏感，类似「理性的中庸派」。' },
+  mirror: { label:'镜像反转', color:'#c891f2',
+    tip:'预测 = 总人数 − 最近均值。逻辑是「上周很挤所以大家这周不去，那我就去」。这类策略和「跟风者」天然对立，两者共存能帮助系统自我平衡。' },
+  trend:  { label:'趋势外推', color:'#ffd32a',
+    tip:'根据最近两周的变化趋势做线性外推。如果出勤在增加，预测会继续增加。在出勤趋势单调变化时很准，但容易在震荡时误判。' },
+  wavg:   { label:'加权/指数', color:'#00cec9',
+    tip:'近期数据权重更高，越久远的数据贡献越少。比简单均值对近期变化更敏感，类似带「遗忘机制」的记忆。' },
+};
+
+// ══════════════════════════════════════════════════════════
+// STRATEGY POOL
+// ══════════════════════════════════════════════════════════
+function buildPool(N, m) {
+  const pool = [];
+  [.10,.20,.30,.40,.50,.60,.70,.80,.90].forEach(f => {
+    pool.push({ cat:'fixed', name:`固定 ${Math.round(f*100)}%`,
+      color:`hsl(${Math.round(f*200)},72%,60%)`,
+      fn:(_,n)=>n*f });
+  });
+  for (let k=1;k<=m;k++) { const fk=k;
+    pool.push({ cat:'lag', name:`滞后 ${k}周`,
+      color:`hsl(${205+fk*8},68%,60%)`,
+      fn:(h,n)=>h.length>=fk?h[h.length-fk]:n*.5 }); }
+  for (let w=2;w<=m;w++) { const fw=w;
+    pool.push({ cat:'avg', name:`均值 ${w}周`,
+      color:`hsl(${130+fw*8},60%,56%)`,
+      fn:(h,n)=>{const s=h.slice(-fw);return s.length?s.reduce((a,b)=>a+b,0)/s.length:n*.5;} }); }
+  pool.push({ cat:'avg', name:`中位数 ${m}周`, color:'#00b894',
+    fn:(h,n)=>{const s=[...h.slice(-m)].sort((a,b)=>a-b);
+      if(!s.length)return n*.5;const mid=Math.floor(s.length/2);
+      return s.length%2?s[mid]:(s[mid-1]+s[mid])/2;} });
+  for (let k=1;k<=Math.min(m,5);k++) { const fk=k;
+    pool.push({ cat:'mirror', name:`镜像 ${k}周均`,
+      color:`hsl(${270+fk*12},62%,63%)`,
+      fn:(h,n)=>{const s=h.slice(-fk);const mean=s.length?s.reduce((a,b)=>a+b,0)/s.length:n*.5;return n-mean;} }); }
+  pool.push({ cat:'trend', name:'线性趋势', color:'#ff9a44',
+    fn:(h,n)=>h.length<2?n*.5:Math.max(0,Math.min(n,2*h[h.length-1]-h[h.length-2])) });
+  pool.push({ cat:'trend', name:'趋势+均值', color:'#fdcb6e',
+    fn:(h,n)=>{if(h.length<2)return n*.5;const t=2*h[h.length-1]-h[h.length-2];
+      const m4=h.slice(-4).reduce((a,b)=>a+b,0)/Math.min(4,h.length);
+      return Math.max(0,Math.min(n,.5*t+.5*m4));} });
+  pool.push({ cat:'wavg', name:`加权均值 ${m}周`, color:'#a29bfe',
+    fn:(h,n)=>{const s=h.slice(-m);if(!s.length)return n*.5;
+      const w=s.map((_,i)=>i+1),ws=w.reduce((a,b)=>a+b,0);
+      return s.reduce((a,v,i)=>a+v*w[i],0)/ws;} });
+  pool.push({ cat:'wavg', name:'指数平滑 EMA', color:'#74b9ff',
+    fn:(h,n)=>{if(!h.length)return n*.5;let e=h[0];
+      const a=2/(Math.min(m,h.length)+1);
+      for(let i=1;i<h.length;i++)e=a*h[i]+(1-a)*e;return e;} });
+  return pool;
+}
+
+// ══════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════
+const lerp  = (a,b,t) => a+(b-a)*t;
+const ease  = t => t<.5?2*t*t:-1+(4-2*t)*t;
+const clamp = (v,lo,hi) => Math.max(lo,Math.min(hi,v));
+function seeded(seed){ let s=seed>>>0; return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967295;}; }
+function gridDims(N){ const c=Math.ceil(Math.sqrt(N)); return{cols:c,rows:Math.ceil(N/c)}; }
+
+// ══════════════════════════════════════════════════════════
+// AGENT
+// ══════════════════════════════════════════════════════════
+class Agent {
+  constructor(id,strats){
+    this.id=id; this.strats=strats;
+    this.scores=new Float32Array(strats.length);
+    this.x=this.y=this.sx=this.sy=this.tx=this.ty=this.hx=this.hy=0;
+    this.ap=1; this.atBar=false; this.expr='n'; this.thinking=false; this.prediction=0;
+  }
+  bestIdx(){ let bi=0; for(let i=1;i<this.scores.length;i++) if(this.scores[i]>this.scores[bi])bi=i; return bi; }
+  get color(){ return this.strats[this.bestIdx()].color; }
+  get cat()  { return this.strats[this.bestIdx()].cat; }
+  get sname(){ return this.strats[this.bestIdx()].name; }
+  predict(h,n){ return this.strats[this.bestIdx()].fn(h,n); }
+  updateScores(h,actual,n,thresh){
+    const ok=actual<=thresh;
+    for(let i=0;i<this.strats.length;i++){
+      const p=this.strats[i].fn(h,n);
+      this.scores[i]+=(p<thresh)===ok?1:-1;
+    }
+  }
+  moveTo(tx,ty){ this.sx=this.x;this.sy=this.y;this.tx=tx;this.ty=ty;this.ap=0; }
+  tick(dt,spd){
+    if(this.ap<1){ this.ap=Math.min(1,this.ap+dt*spd);
+      const t=ease(this.ap); this.x=lerp(this.sx,this.tx,t); this.y=lerp(this.sy,this.ty,t); }
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// SIMULATION
+// ══════════════════════════════════════════════════════════
+class Sim {
+  constructor(N,threshPct,m,K){
+    this.N=N; this.threshPct=threshPct; this.m=m; this.K=K;
+    this.pool=buildPool(N,m); this.history=this._warmup();
+    this.log=[]; this.week=0; this.agents=this._mkAgents();
+  }
+  get threshold(){ return Math.round(this.N*this.threshPct/100); }
+  get alpha()    { return (Math.pow(2,this.m)/this.N).toFixed(3); }
+  _warmup(){ const rng=seeded(7777),h=[],len=Math.max(this.m+3,12);
+    for(let i=0;i<len;i++) h.push(Math.round(this.N*(.2+rng()*.6))); return h; }
+  _mkAgents(){ const rng=seeded(12345),plen=this.pool.length,K=Math.min(this.K,plen);
+    return Array.from({length:this.N},(_,id)=>{
+      const idx=Array.from({length:plen},(_,i)=>i);
+      for(let j=plen-1;j>0;j--){const k=Math.floor(rng()*(j+1));[idx[j],idx[k]]=[idx[k],idx[j]];}
+      return new Agent(id,idx.slice(0,K).map(i=>this.pool[i]));
+    });
+  }
+  recentAvg(n=20){ if(!this.log.length)return null;
+    const s=this.log.slice(-n); return s.reduce((a,b)=>a+b,0)/s.length; }
+  catCounts(){ const c={}; this.agents.forEach(a=>{const k=a.cat;c[k]=(c[k]||0)+1;}); return c; }
+}
+
+// ══════════════════════════════════════════════════════════
+// LAYOUT
+// ══════════════════════════════════════════════════════════
+const CW=960,CH=560;
+const HOME_R=430,BAR_L=470,BAR_R=960,SCENE_B=390;
+const BOT_T=398,BOT_B=552,STRAT_R=310;
+let layout={};
+
+function computeLayout(N){
+  const{cols,rows}=gridDims(N),PAD=18,MW=58;
+  const hgx=PAD,hgy=78,hcw=(HOME_R-hgx*2)/cols,hch=(SCENE_B-hgy-18)/rows;
+  const bgx=BAR_L+PAD,bgy=100,bcw=(BAR_R-bgx-MW)/cols,bch=(SCENE_B-bgy-18)/rows;
+  const ar=clamp(Math.min(hcw,hch,bcw,bch)*.38,6,13);
+  layout={cols,rows,hgx,hgy,hcw,hch,bgx,bgy,bcw,bch,ar};
+}
+function homePos(i){ const{cols,hgx,hgy,hcw,hch}=layout;
+  return{x:hgx+i%cols*hcw+hcw/2,y:hgy+Math.floor(i/cols)*hch+hch/2}; }
+function barPos(bi){ const{cols,bgx,bgy,bcw,bch}=layout;
+  return{x:bgx+bi%cols*bcw+bcw/2,y:bgy+Math.floor(bi/cols)*bch+bch/2}; }
+function placeHome(sim){ sim.agents.forEach((a,i)=>{
+  const p=homePos(i); a.x=a.sx=a.tx=a.hx=p.x; a.y=a.sy=a.ty=a.hy=p.y; a.ap=1; }); }
+function assignTargets(sim){ let bi=0; sim.agents.forEach(a=>{
+  const p=a.atBar?barPos(bi++):({x:a.hx,y:a.hy}); a.moveTo(p.x,p.y); }); }
+
+// ══════════════════════════════════════════════════════════
+// CANVAS DRAWING
+// ══════════════════════════════════════════════════════════
+const canvas=document.getElementById('sim');
+const ctx=canvas.getContext('2d');
+let canvasTooltip=null;
+
+function rr(x,y,w,h,r=4){
+  if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x,y,w,h,r);return;}
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
+}
+function lighter(hex,f){ const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return `rgb(${Math.min(255,r+(255-r)*f)|0},${Math.min(255,g+(255-g)*f)|0},${Math.min(255,b+(255-b)*f)|0})`; }
+
+function drawBg(sim,ts){
+  ctx.fillStyle=clr('#0d1117','#eff2f6'); ctx.fillRect(0,0,CW,CH);
+  const hg=ctx.createLinearGradient(0,0,HOME_R,0);
+  hg.addColorStop(0,clr('#0b1520','#d8e8f5')); hg.addColorStop(1,clr('#0f1d2b','#e4eff8'));
+  ctx.fillStyle=hg; rr(4,4,HOME_R-8,SCENE_B-4,8); ctx.fill();
+  const bg=ctx.createLinearGradient(BAR_L,0,BAR_R,0);
+  bg.addColorStop(0,clr('#1c1205','#fff3dc')); bg.addColorStop(1,clr('#261a06','#fff8eb'));
+  ctx.fillStyle=bg; rr(BAR_L,4,BAR_R-BAR_L-4,SCENE_B-4,8); ctx.fill();
+
+  ctx.strokeStyle=clr('#21262d','#c8d0da'); ctx.lineWidth=1; ctx.setLineDash([5,4]);
+  ctx.beginPath(); ctx.moveTo(450,20); ctx.lineTo(450,160); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(450,215); ctx.lineTo(450,SCENE_B-8); ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.save(); ctx.strokeStyle=clr('#3d4f60','#8aabcc'); ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(450,215,24,Math.PI,0);
+  ctx.lineTo(474,168); ctx.lineTo(426,168); ctx.closePath();
+  ctx.fillStyle=clr('rgba(20,35,50,.8)','rgba(180,210,230,.8)'); ctx.fill(); ctx.stroke();
+  ctx.fillStyle=clr('#2d3f50','#4a7090'); ctx.font='9px system-ui'; ctx.textAlign='center';
+  ctx.fillText('出门',450,200); ctx.restore();
+
+  const nhome=sim.agents.filter(a=>!a.atBar).length;
+  ctx.font='bold 13px system-ui'; ctx.textAlign='left';
+  ctx.fillStyle=clr('#2a4a7a','#1a5a9a'); ctx.fillText('🏠  今晚在家',18,30);
+  ctx.font='11px system-ui'; ctx.fillStyle=clr('#1e3550','#3a6aaa');
+  ctx.fillText(`${nhome} 人`,20,48);
+
+  const att=sim.log[sim.log.length-1]??0, over=att>sim.threshold;
+  const nc=over?(clr('#ff4c4c','#cc2222')):(clr('#f0a500','#c07800'));
+  ctx.save();
+  if(isDark){ ctx.shadowColor=nc; ctx.shadowBlur=10+Math.sin(ts/700)*4; }
+  ctx.fillStyle=nc; ctx.font='bold 17px system-ui'; ctx.textAlign='center';
+  ctx.fillText('🍺  El Farol Bar',(BAR_L+BAR_R-58)/2+4,30); ctx.restore();
+  const nbar=sim.agents.filter(a=>a.atBar).length;
+  ctx.fillStyle=clr('#5a3d10','#8b5010'); ctx.font='11px system-ui'; ctx.textAlign='left';
+  ctx.fillText(`${nbar} 人在场`,BAR_L+20,48);
+}
+
+function drawCapacityMeter(sim,phase){
+  const att=sim.log[sim.log.length-1]??0,thr=sim.threshold,over=att>thr;
+  const mx=BAR_R-50,my=66,mw=18,mh=SCENE_B-80;
+  ctx.fillStyle=clr('#1a1208','#e0d8c8'); rr(mx,my,mw,mh,4); ctx.fill();
+  const fF=clamp(att/sim.N,0,1),fH=mh*fF;
+  const fc=over?'#e74c3c':'#27ae60';
+  if(fH>4){ const fg=ctx.createLinearGradient(0,my+mh,0,my);
+    fg.addColorStop(0,fc); fg.addColorStop(1,lighter(fc,.32));
+    ctx.fillStyle=fg; rr(mx,my+mh-fH,mw,fH,4); ctx.fill(); }
+  const thrY=my+mh*(1-thr/sim.N);
+  ctx.strokeStyle=clr('#f0a500','#c07800'); ctx.lineWidth=2; ctx.setLineDash([3,2]);
+  ctx.beginPath(); ctx.moveTo(mx-8,thrY); ctx.lineTo(mx+mw+5,thrY); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle=clr('#6e7681','#9ca3af'); ctx.font='9px system-ui'; ctx.textAlign='center';
+  ctx.fillText('满',mx+mw/2,my-3); ctx.fillText('空',mx+mw/2,my+mh+12);
+  if(phase==='result'&&sim.log.length){
+    ctx.fillStyle=over?'#e74c3c':'#27ae60';
+    ctx.font='bold 12px system-ui'; ctx.textAlign='center';
+    ctx.fillText(`${att}/${thr}`,mx+mw/2,my+mh+28);
+    ctx.font='9px system-ui'; ctx.fillStyle=clr('#6e7681','#9ca3af');
+    ctx.fillText('在场/阈值',mx+mw/2,my+mh+40);
+  }
+}
+
+function drawBarCounter(){
+  const bx=BAR_L+8,bw=BAR_R-BAR_L-68,cy=62;
+  const cg=ctx.createLinearGradient(0,cy,0,cy+10);
+  cg.addColorStop(0,clr('#6b4c1a','#c8922a')); cg.addColorStop(1,clr('#3d2c0e','#9b6c16'));
+  ctx.fillStyle=cg; rr(bx,cy,bw,10,3); ctx.fill();
+  ctx.strokeStyle=clr('#8a6028','#d4a030'); ctx.lineWidth=.5; rr(bx,cy,bw,10,3); ctx.stroke();
+}
+
+function drawAgent(a,phase,thinkT,curThresh){
+  const{x,y,color,expr,thinking}=a, r=layout.ar, alpha=a.atBar?1.0:0.72;
+  ctx.save(); ctx.globalAlpha=alpha;
+  if(phase==='result'&&expr!=='n'){
+    ctx.shadowColor=expr==='h'?(clr('#00ff88','#00c870')):(clr('#ff3333','#e03030'));
+    ctx.shadowBlur=12;
+  }
+  ctx.fillStyle=color;
+  ctx.beginPath(); ctx.ellipse(x,y+r*1.72,r*.6,r*.92,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+  if(!isDark){
+    ctx.strokeStyle='rgba(0,0,0,0.18)'; ctx.lineWidth=.8;
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(x,y+r*1.72,r*.6,r*.92,0,0,Math.PI*2); ctx.stroke();
+  }
+  ctx.fillStyle=clr('rgba(255,255,255,.2)','rgba(255,255,255,.35)');
+  ctx.beginPath(); ctx.arc(x-r*.27,y-r*.27,r*.42,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,.62)';
+  ctx.beginPath(); ctx.arc(x-r*.31,y-r*.07,r*.15,0,Math.PI*2);
+  ctx.arc(x+r*.31,y-r*.07,r*.15,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,.6)'; ctx.lineWidth=r*.15; ctx.lineCap='round';
+  ctx.beginPath();
+  if(expr==='h')       ctx.arc(x,y+r*.12,r*.33,.1,Math.PI-.1);
+  else if(expr==='s')  ctx.arc(x,y+r*.52,r*.33,Math.PI+.1,Math.PI*2-.1);
+  else { ctx.moveTo(x-r*.28,y+r*.33); ctx.lineTo(x+r*.28,y+r*.33); }
+  ctx.stroke();
+  if(thinking&&thinkT>.2){
+    const fa=Math.min(1,(thinkT-.2)*3.5)*alpha;
+    ctx.globalAlpha=fa; ctx.shadowBlur=0;
+    ctx.fillStyle=clr('rgba(255,255,255,.4)','rgba(0,0,0,.25)');
+    ctx.beginPath(); ctx.arc(x+r*.62,y-r*.82,1.6,0,Math.PI*2);
+    ctx.arc(x+r*.88,y-r*1.2,2.0,0,Math.PI*2); ctx.fill();
+    const bx=x+r*1.05,by=y-r*2.08;
+    ctx.fillStyle=clr('rgba(255,255,255,.1)','rgba(255,255,255,.8)');
+    ctx.strokeStyle=clr('rgba(255,255,255,.28)','rgba(0,0,0,.2)');
+    ctx.lineWidth=.8; rr(bx-10,by-9,20,14,4); ctx.fill(); ctx.stroke();
+    const going=a.prediction<curThresh;
+    ctx.font=`${Math.max(8,r*.8)}px system-ui`; ctx.textAlign='center';
+    ctx.fillStyle=going?'#55efc4':'#fdcb6e';
+    ctx.fillText(going?'🍺':'🏠',bx,by+2);
+  }
+  ctx.restore();
+}
+
+function drawChart(sim){
+  const log=sim.log, x0=STRAT_R+8,y0=BOT_T+4,cw=CW-STRAT_R-16,ch=BOT_B-BOT_T-8;
+  ctx.fillStyle=clr('#161b22','#ffffff'); rr(x0,y0,cw,ch,6); ctx.fill();
+  if(log.length<2){
+    ctx.fillStyle=clr('#30363d','#9ca3af'); ctx.font='12px system-ui'; ctx.textAlign='center';
+    ctx.fillText('按「单步」或「播放」开始',x0+cw/2,y0+ch/2+4); return;
+  }
+  const MAX=120,vis=log.slice(-MAX), xsc=cw/(MAX-1),ysc=(ch-22)/sim.N;
+  const xoff=x0,ybase=y0+ch-8,thr=sim.threshold;
+  ctx.strokeStyle=clr('#21262d','#e8ecf0'); ctx.lineWidth=1;
+  for(const pct of[.25,.5,.75]){
+    const v=Math.round(sim.N*pct),py=ybase-v*ysc;
+    ctx.beginPath(); ctx.moveTo(x0,py); ctx.lineTo(x0+cw,py); ctx.stroke();
+    ctx.fillStyle=clr('#4a5568','#8090a0'); ctx.font='9px system-ui'; ctx.textAlign='left';
+    ctx.fillText(v,x0+3,py-2);
+  }
+  const thrPy=ybase-thr*ysc;
+  ctx.strokeStyle=clr('rgba(240,165,0,.55)','rgba(192,120,0,.6)');
+  ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(x0,thrPy); ctx.lineTo(x0+cw,thrPy); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle=clr('rgba(240,165,0,.75)','rgba(192,120,0,.8)');
+  ctx.font='9px system-ui'; ctx.textAlign='right';
+  ctx.fillText(`阈值 ${thr}`,x0+cw-4,thrPy-2);
+  if(vis.length>=5){
+    const W=Math.min(20,vis.length);
+    ctx.strokeStyle=clr('rgba(240,165,0,.45)','rgba(192,120,0,.5)');
+    ctx.lineWidth=1.5; ctx.beginPath();
+    for(let i=W-1;i<vis.length;i++){
+      const mean=vis.slice(i-W+1,i+1).reduce((a,b)=>a+b,0)/W;
+      const px=xoff+(MAX-vis.length+i)*xsc,py=ybase-mean*ysc;
+      i===W-1?ctx.moveTo(px,py):ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+  }
+  const grad=ctx.createLinearGradient(0,y0,0,ybase);
+  grad.addColorStop(0,clr('rgba(78,121,167,.32)','rgba(78,121,167,.18)'));
+  grad.addColorStop(1,'rgba(78,121,167,0)');
+  ctx.fillStyle=grad; ctx.beginPath();
+  ctx.moveTo(xoff+(MAX-vis.length)*xsc,ybase);
+  vis.forEach((v,i)=>ctx.lineTo(xoff+(MAX-vis.length+i)*xsc,ybase-v*ysc));
+  ctx.lineTo(xoff+(MAX-1)*xsc,ybase); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle=clr('#4e79a7','#3a6aaa'); ctx.lineWidth=2; ctx.lineJoin='round';
+  ctx.beginPath();
+  vis.forEach((v,i)=>{const px=xoff+(MAX-vis.length+i)*xsc,py=ybase-v*ysc;
+    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);});
+  ctx.stroke();
+  const lv=vis[vis.length-1],lpx=xoff+(MAX-1)*xsc,lpy=ybase-lv*ysc;
+  ctx.fillStyle=lv>thr?'#e74c3c':'#27ae60';
+  ctx.beginPath(); ctx.arc(lpx,lpy,4.5,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='white'; ctx.beginPath(); ctx.arc(lpx,lpy,1.8,0,Math.PI*2); ctx.fill();
+  if(log.length>=10){
+    const r50=log.slice(-50), mean=r50.reduce((a,b)=>a+b,0)/r50.length;
+    const v50=r50.reduce((a,v)=>a+(v-mean)**2,0)/r50.length;
+    ctx.fillStyle=clr('#6e7681','#9ca3af'); ctx.font='9px system-ui'; ctx.textAlign='right';
+    ctx.fillText(`σ²/N = ${(v50/sim.N).toFixed(2)}`,x0+cw-4,y0+14);
+  }
+}
+
+function drawStratDist(sim){
+  const x0=4,y0=BOT_T+4,w=STRAT_R-8,h=BOT_B-BOT_T-8;
+  ctx.fillStyle=clr('#161b22','#ffffff'); rr(x0,y0,w,h,6); ctx.fill();
+  ctx.fillStyle=clr('#6e7681','#9ca3af'); ctx.font='bold 10px system-ui'; ctx.textAlign='left';
+  ctx.fillText('策略类型分布（当前最优）',x0+8,y0+15);
+  const counts=sim.catCounts(),cats=Object.keys(CAT),total=sim.N;
+  const BX=x0+8,BW=w-16;
+  const sbY=y0+22,sbH=10;
+  ctx.fillStyle=clr('#21262d','#e8ecf0'); rr(BX,sbY,BW,sbH,3); ctx.fill();
+  let cx=BX;
+  cats.forEach(cat=>{const cnt=counts[cat]||0;if(!cnt)return;
+    ctx.fillStyle=CAT[cat].color; ctx.fillRect(cx,sbY,BW*cnt/total,sbH); cx+=BW*cnt/total;});
+  let ry=y0+41;
+  const rowH=17,trackW=BW-74;
+  cats.forEach(cat=>{
+    const cnt=counts[cat]||0,frac=cnt/total;
+    ctx.fillStyle=CAT[cat].color; ctx.beginPath();
+    ctx.arc(BX+5,ry+rowH*.45,4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=clr('#c9d1d9','#374151'); ctx.font='10px system-ui'; ctx.textAlign='left';
+    ctx.fillText(CAT[cat].label,BX+14,ry+rowH*.7);
+    const tx=BX+BW-trackW-20;
+    ctx.fillStyle=clr('#21262d','#e8ecf0'); ctx.fillRect(tx,ry+2,trackW,rowH-5);
+    if(frac>0){ctx.fillStyle=CAT[cat].color; ctx.fillRect(tx,ry+2,trackW*frac,rowH-5);}
+    ctx.fillStyle=clr('#8b949e','#6b7280'); ctx.font='10px system-ui'; ctx.textAlign='right';
+    ctx.fillText(cnt,BX+BW,ry+rowH*.7);
+    ry+=rowH+1;
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// STATE MACHINE
+// ══════════════════════════════════════════════════════════
+let sim=null,phase='idle',phaseT=0,playing=false;
+let pending=null,curThresh=0,lastTs=null,rafId=null;
+
+const getSpd=()=>+document.getElementById('sl-spd').value;
+const getThr=()=>+document.getElementById('sl-thr').value;
+const getM  =()=>+document.getElementById('sl-m').value;
+const getK  =()=>+document.getElementById('sl-k').value;
+const getN  =()=>+document.getElementById('sel-n').value;
+
+function initSim(){
+  if(rafId)cancelAnimationFrame(rafId);
+  const N=getN(),thr=getThr(),m=getM(),K=getK();
+  computeLayout(N); sim=new Sim(N,thr,m,K);
+  curThresh=sim.threshold; placeHome(sim);
+  phase='idle'; phaseT=0; pending=null; lastTs=null;
+  updateStats(); updateAlpha(); updateLegend();
+  rafId=requestAnimationFrame(loop);
+}
+function beginThinking(){
+  curThresh=sim.threshold;
+  pending=sim.agents.map(a=>{a.thinking=true;a.expr='n';
+    a.prediction=a.predict(sim.history,sim.N); return a.prediction<curThresh;});
+  phase='thinking'; phaseT=0;
+}
+function beginMoving(){
+  sim.agents.forEach((a,i)=>{a.thinking=false;a.atBar=pending[i];});
+  assignTargets(sim); phase='moving'; phaseT=0;
+}
+function beginResult(){
+  const att=sim.agents.filter(a=>a.atBar).length,thr=curThresh;
+  sim.agents.forEach(a=>{const won=a.atBar?(att<=thr):(att>thr);
+    a.expr=won?'h':'s'; a.updateScores(sim.history,att,sim.N,thr);});
+  sim.history.push(att); sim.log.push(att); sim.week++;
+  phase='result'; phaseT=0; updateStats(); updateLegend();
+}
+function advance(){
+  if(phase==='idle')         beginThinking();
+  else if(phase==='thinking') beginMoving();
+  else if(phase==='moving')   beginResult();
+  else if(phase==='result')   beginThinking();
+}
+
+function updateStats(){
+  if(!sim)return;
+  document.getElementById('sv-wk').textContent  =sim.week;
+  document.getElementById('sv-thr').textContent =sim.threshold;
+  document.getElementById('sv-pool').textContent=sim.pool.length;
+  const last=sim.log[sim.log.length-1];
+  if(last!==undefined){
+    document.getElementById('sv-att').textContent=last;
+    const av=sim.recentAvg(20);
+    document.getElementById('sv-avg').textContent=av?av.toFixed(1):'—';
+    const diff=last-sim.threshold,el=document.getElementById('sv-status');
+    if(Math.abs(diff)<=3){el.textContent='恰到好处 ✨';el.style.color='var(--accent)';}
+    else if(diff>0){el.textContent=`太挤了 +${diff}`;el.style.color='#e74c3c';}
+    else{el.textContent=`有点冷清 ${diff}`;el.style.color='#4e79a7';}
+  }
+}
+function updateAlpha(){
+  if(!sim)return;
+  const av=+sim.alpha;
+  let zone=av<0.18?'拥挤相':av<0.55?'协调区':'稀疏相';
+  document.getElementById('alpha-badge').textContent=`α = 2ᵐ/N = ${sim.alpha}（${zone}）`;
+}
+function updateLegend(){
+  const el=document.getElementById('legend'); el.innerHTML='';
+  const counts=sim?.catCounts()||{};
+  Object.entries(CAT).forEach(([key,{label,color,tip}])=>{
+    const cnt=counts[key]||0;
+    const d=document.createElement('div');
+    d.className='li';
+    d.dataset.tip=label;
+    d.dataset.tipBody=tip;
+    d.innerHTML=`<div class="ld" style="background:${color}"></div><span class="ln">${label}</span><span class="lc">${cnt}</span>`;
+    el.appendChild(d);
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// MAIN LOOP
+// ══════════════════════════════════════════════════════════
+function loop(ts){
+  const dt=lastTs?Math.min((ts-lastTs)/1000,.1):0; lastTs=ts;
+  sim.threshPct=getThr();
+  if(playing&&phase!=='idle'){
+    phaseT+=dt*getSpd();
+    if(phaseT>=1){phaseT=1;advance();}
+  }
+  sim.agents.forEach(a=>a.tick(dt,getSpd()*4.5));
+  drawBg(sim,ts); drawBarCounter(); drawCapacityMeter(sim,phase);
+  const thinkT=phase==='thinking'?phaseT:0;
+  sim.agents.forEach(a=>drawAgent(a,phase,thinkT,curThresh));
+  drawStratDist(sim); drawChart(sim);
+  const phLbl={idle:'    等待开始，按「单步」或「播放」',
+    thinking:'💭  居民们正在独立思考...',
+    moving:'🚶  前往酒吧 / 留在家中...',
+    result:'📊  本周结果揭晓'};
+  ctx.fillStyle=clr('#3d4f5e','#8090a0');
+  ctx.font='11px system-ui'; ctx.textAlign='right';
+  ctx.fillText(phLbl[phase]||'',CW-10,SCENE_B-6);
+  // Canvas agent tooltip
+  if(canvasTooltip){
+    ctx.save(); ctx.globalAlpha=.94;
+    ctx.font='11px system-ui';
+    const tw=ctx.measureText(canvasTooltip.text).width+16;
+    ctx.fillStyle=clr('#1c2128','#ffffff');
+    ctx.strokeStyle=clr('#30363d','#d0d7de'); ctx.lineWidth=1;
+    rr(canvasTooltip.x-tw/2,canvasTooltip.y-30,tw,20,4); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=clr('#e6edf3','#24292f'); ctx.textAlign='center';
+    ctx.fillText(canvasTooltip.text,canvasTooltip.x,canvasTooltip.y-16);
+    ctx.restore();
+  }
+  rafId=requestAnimationFrame(loop);
+}
+
+// ══════════════════════════════════════════════════════════
+// CANVAS MOUSE (agent tooltip)
+// ══════════════════════════════════════════════════════════
+canvas.addEventListener('mousemove',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const mx=(e.clientX-rect.left)*(CW/rect.width);
+  const my=(e.clientY-rect.top)*(CH/rect.height);
+  canvasTooltip=null;
+  if(sim){const r2=layout.ar*layout.ar*2.8;
+    for(const a of sim.agents){
+      const dx=a.x-mx,dy=a.y-my;
+      if(dx*dx+dy*dy<r2){
+        canvasTooltip={x:a.x,y:a.y,text:`${a.sname} · 预测 ${Math.round(a.prediction)} 人`};
+        break;
+      }
+    }
+  }
+});
+canvas.addEventListener('mouseleave',()=>canvasTooltip=null);
+
+// ══════════════════════════════════════════════════════════
+// CONTROLS
+// ══════════════════════════════════════════════════════════
+document.getElementById('btn-play').addEventListener('click',()=>{
+  playing=!playing;
+  const btn=document.getElementById('btn-play');
+  if(playing){btn.textContent='⏸ 暂停';btn.classList.add('on');if(phase==='idle')beginThinking();}
+  else{btn.textContent='▶ 播放';btn.classList.remove('on');}
+});
+document.getElementById('btn-step').addEventListener('click',()=>{if(!playing)advance();});
+document.getElementById('btn-reset').addEventListener('click',()=>{
+  playing=false;
+  const btn=document.getElementById('btn-play');
+  btn.textContent='▶ 播放';btn.classList.remove('on');initSim();
+});
+
+['sl-m','sl-k','sel-n'].forEach(id=>{
+  const wasEl=document.getElementById(id);
+  wasEl.addEventListener('change',()=>{
+    const wp=playing; playing=false;
+    document.getElementById('btn-play').textContent='▶ 播放';
+    document.getElementById('btn-play').classList.remove('on');
+    initSim();
+    if(wp){playing=true;document.getElementById('btn-play').textContent='⏸ 暂停';
+      document.getElementById('btn-play').classList.add('on');beginThinking();}
+  });
+  wasEl.addEventListener('input',()=>{
+    if(id==='sl-m'){document.getElementById('vv-m').textContent=wasEl.value;updateAlpha();}
+    if(id==='sl-k') document.getElementById('vv-k').textContent=wasEl.value;
+  });
+});
+document.getElementById('sl-thr').addEventListener('input',e=>{
+  document.getElementById('vv-thr').textContent=e.target.value+'%';
+  if(sim)updateStats();
+});
+document.getElementById('sl-spd').addEventListener('input',e=>{
+  document.getElementById('vv-spd').textContent=e.target.value+'×';
+});
+
+// Init
+document.getElementById('vv-thr').textContent=document.getElementById('sl-thr').value+'%';
+document.getElementById('vv-m').textContent=document.getElementById('sl-m').value;
+document.getElementById('vv-k').textContent=document.getElementById('sl-k').value;
+document.getElementById('vv-spd').textContent=document.getElementById('sl-spd').value+'×';
+initSim();
+</script>
+</body>
+</html>
